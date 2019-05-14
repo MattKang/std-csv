@@ -237,14 +237,11 @@ std::vector<FilteredTuple<ColumnTs...>> toTuples(CharT&& filename, bool skipFirs
     }
 
     // Get data
-    using TupleInT = std::tuple<ColumnTs...>;
-    using TupleOutT = FilteredTuple<ColumnTs...>;
-    using UnfilteredIndexT = std::make_index_sequence<sizeof...(ColumnTs)>;
-    std::vector<TupleOutT> data;
+    std::vector<FilteredTuple<ColumnTs...>> data;
     do
     {
         std::istringstream stream(line);
-        TupleInT unfilteredTuple(detail::parseStream<ColumnTs>(stream, delimiter)...);
+        std::tuple<ColumnTs...> unfilteredTuple(detail::parseStream<ColumnTs>(stream, delimiter)...);
         data.emplace_back(detail::filterTuple(unfilteredTuple));
     }
     while (std::getline(file, line));
