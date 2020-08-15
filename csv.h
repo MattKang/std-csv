@@ -46,28 +46,27 @@ char getDelimiter(CharT&& line)
 }
 
 template<typename T>
-T parseStream(std::istringstream& stream, char delimiter = ',')
+T parseStream(std::istringstream& stream, char delimiter)
 {
-    T value = std::numeric_limits<T>::quiet_NaN();
-    std::string valueAsString;
-    std::getline(stream, valueAsString, delimiter);
-    std::istringstream(valueAsString) >> value;
-    return value;
-}
-
-template<>
-IGNORE parseStream(std::istringstream& stream, char delimiter)
-{
-    stream.ignore(std::numeric_limits<std::streamsize>::max(), delimiter);
-    return {};
-}
-
-template<>
-std::string parseStream(std::istringstream& stream, char delimiter)
-{
-    std::string value;
-    std::getline(stream, value, delimiter);
-    return value;
+    if constexpr (std::is_same_v<T, IGNORE>)
+    {
+        stream.ignore(std::numeric_limits<std::streamsize>::max(), delimiter);
+        return {};
+    }
+    else if constexpr (std::is_same_v<T, std::string>)
+    {
+        std::string value;
+        std::getline(stream, value, delimiter);
+        return value;
+    }
+    else
+    {
+        T value = std::numeric_limits<T>::quiet_NaN();
+        std::string valueAsString;
+        std::getline(stream, valueAsString, delimiter);
+        std::istringstream(valueAsString) >> value;
+        return value;
+    }
 }
 
 template<typename>
