@@ -22,23 +22,21 @@ template<typename... Ts>
 using FilteredTuple = decltype(std::tuple_cat(
         std::declval<std::conditional_t<std::is_same<IGNORE, Ts>::value, std::tuple<>, std::tuple<Ts>>>()...));
 
-
 namespace detail
 {
 
-template<typename CharT>
-char getDelimiter(CharT&& line)
+char getDelimiter(const std::string_view& line)
 {
     char delimiter = ' '; // space-separated
-    if (std::regex_search(line, std::regex(","))) // comma-separated
+    if (std::regex_search(line.cbegin(), line.cend(), std::regex(","))) // comma-separated
     {
         delimiter = ',';
     }
-    else if (std::regex_search(line, std::regex(";"))) // semicolon-separated
+    else if (std::regex_search(line.cbegin(), line.cend(), std::regex(";"))) // semicolon-separated
     {
         delimiter = ';';
     }
-    else if (std::regex_search(line, std::regex("\\t"))) // tab-separated
+    else if (std::regex_search(line.cbegin(), line.cend(), std::regex("\\t"))) // tab-separated
     {
         delimiter = '\t';
     }
@@ -112,7 +110,7 @@ std::decay_t<VectorT> getVectorBySequence(VectorT&& vec, std::index_sequence<Ind
 
 
 template<typename CharT>
-std::vector<std::string> getHeader(CharT&& filename)
+std::vector<std::string> getHeader(CharT&& filename, char delimiter = '\0')
 {
     // Open file
     std::ifstream file(std::forward<CharT>(filename));
@@ -127,7 +125,10 @@ std::vector<std::string> getHeader(CharT&& filename)
     file.close();
 
     // Determine delimiter
-    const char delimiter = detail::getDelimiter(line);
+    if (delimiter == '\0')
+    {
+        delimiter = detail::getDelimiter(line);
+    }
 
     // Get header
     std::istringstream stream(line);
@@ -141,12 +142,12 @@ std::vector<std::string> getHeader(CharT&& filename)
     return header;
 }
 
-template<typename DataT, size_t NColumns, typename CharT>
-std::vector<std::array<DataT, NColumns>> toArrays(CharT&& filename, bool skipFirstLineHeader = false)
+template<typename DataT, size_t nColumns>
+std::vector<std::array<DataT, nColumns>> toArrays(const std::string_view& filename, char delimiter = ',')
 {
-    using ArrayT = std::array<DataT, NColumns>;
+    using ArrayT = std::array<DataT, nColumns>;
     // Open file
-    std::ifstream file(std::forward<CharT>(filename));
+    std::ifstream file(filename.data());
     if (!file)
     {
         return {};
@@ -156,12 +157,9 @@ std::vector<std::array<DataT, NColumns>> toArrays(CharT&& filename, bool skipFir
     std::getline(file, line);
 
     // Determine delimiter
-    const char delimiter = detail::getDelimiter(line);
-
-    // Skip header
-    if (skipFirstLineHeader)
+    if (delimiter == '\0')
     {
-        std::getline(file, line); // Get next line
+        delimiter = detail::getDelimiter(line);
     }
 
     // Get data
@@ -183,8 +181,10 @@ std::vector<std::array<DataT, NColumns>> toArrays(CharT&& filename, bool skipFir
     return data;
 }
 
-template<typename DataT, size_t NColumns, typename CharT>
-std::vector<std::array<DataT, NColumns>> toArrays(CharT&& filename, std::array<std::string, NColumns>& header)
+template<typename DataT, size_t nColumns, typename CharT>
+std::vector<std::array<DataT, nColumns>> toArrays(CharT&& filename,
+                                                  std::array<std::string, nColumns>& header,
+                                                  char delimiter = '\0')
 {
     // Open file
     std::ifstream file(std::forward<CharT>(filename));
@@ -197,7 +197,10 @@ std::vector<std::array<DataT, NColumns>> toArrays(CharT&& filename, std::array<s
     std::getline(file, line);
 
     // Determine delimiter
-    const char delimiter = detail::getDelimiter(line);
+    if (delimiter == '\0')
+    {
+        delimiter = detail::getDelimiter(line);
+    }
 
     // Get header
     std::istringstream stream(line);
@@ -210,11 +213,11 @@ std::vector<std::array<DataT, NColumns>> toArrays(CharT&& filename, std::array<s
         }
     }
 
-    return toArrays<DataT, NColumns>(std::move(file), false); // don't skip first line (header) as we already extracted it
+    return toArrays<DataT, nColumns>(std::move(file), delimiter);
 }
 
 template<typename... ColumnTs, typename CharT>
-std::vector<FilteredTuple<ColumnTs...>> toTuples(CharT&& filename, bool skipFirstLineHeader = false)
+std::vector<FilteredTuple<ColumnTs...>> toTuples(CharT&& filename, char delimiter = '\0')
 {
     // Open file
     std::ifstream file(std::forward<CharT>(filename));
@@ -227,12 +230,9 @@ std::vector<FilteredTuple<ColumnTs...>> toTuples(CharT&& filename, bool skipFirs
     std::getline(file, line);
 
     // Determine delimiter
-    const char delimiter = detail::getDelimiter(line);
-
-    // Skip header
-    if (skipFirstLineHeader)
+    if (delimiter == '\0')
     {
-        std::getline(file, line); // Get next line
+        delimiter = detail::getDelimiter(line);
     }
 
     // Get data
@@ -249,11 +249,13 @@ std::vector<FilteredTuple<ColumnTs...>> toTuples(CharT&& filename, bool skipFirs
     return data;
 }
 
-template<typename... ColumnTs, typename CharT>
-std::vector<FilteredTuple<ColumnTs...>> toTuples(CharT&& filename, std::vector<std::string>& header)
+template<typename... ColumnTs>
+std::vector<FilteredTuple<ColumnTs...>> toTuples(const std::string_view& filename,
+                                                 std::vector<std::string>& header,
+                                                 char delimiter = '\0')
 {
     // Open file
-    std::ifstream file(std::forward<CharT>(filename));
+    std::ifstream file(filename.data());
     if (!file)
     {
         return {};
@@ -263,7 +265,10 @@ std::vector<FilteredTuple<ColumnTs...>> toTuples(CharT&& filename, std::vector<s
     std::getline(file, line);
 
     // Determine delimiter
-    const char delimiter = detail::getDelimiter(line);
+    if (delimiter == '\0')
+    {
+        delimiter = detail::getDelimiter(line);
+    }
 
     // Get header
     header.clear();
@@ -279,11 +284,11 @@ std::vector<FilteredTuple<ColumnTs...>> toTuples(CharT&& filename, std::vector<s
                                          detail::getFilteredSequence(std::tuple<ColumnTs...>{},
                                                                      std::make_index_sequence<sizeof...(ColumnTs)>{}));
 
-    return toTuples<ColumnTs...>(std::move(file), false); // don't skip first line (header) as we already extracted it
+    return toTuples<ColumnTs...>(std::move(file), delimiter);
 }
 
 template<typename DataT, typename CharT>
-std::vector<std::vector<DataT>> toVectors(CharT&& filename, bool skipFirstLineHeader = false)
+std::vector<std::vector<DataT>> toVectors(CharT&& filename, char delimiter = '\0')
 {
     // Open file
     std::ifstream file(std::forward<CharT>(filename));
@@ -296,12 +301,9 @@ std::vector<std::vector<DataT>> toVectors(CharT&& filename, bool skipFirstLineHe
     std::getline(file, line);
 
     // Determine delimiter
-    const char delimiter = detail::getDelimiter(line);
-
-    // Skip header
-    if (skipFirstLineHeader)
+    if (delimiter == '\0')
     {
-        std::getline(file, line); // Get next line
+        delimiter = detail::getDelimiter(line);
     }
 
     // Get data
@@ -322,11 +324,13 @@ std::vector<std::vector<DataT>> toVectors(CharT&& filename, bool skipFirstLineHe
     return data;
 }
 
-template<typename... ColumnTs, typename CharT>
-std::vector<FilteredTuple<ColumnTs...>> toVectors(CharT&& filename, std::vector<std::string>& header)
+template<typename... ColumnTs>
+std::vector<FilteredTuple<ColumnTs...>> toVectors(const std::string_view& filename,
+                                                  std::vector<std::string>& header,
+                                                  char delimiter = '\0')
 {
     // Open file
-    std::ifstream file(std::forward<CharT>(filename));
+    std::ifstream file(filename.data());
     if (!file)
     {
         return {};
@@ -336,7 +340,10 @@ std::vector<FilteredTuple<ColumnTs...>> toVectors(CharT&& filename, std::vector<
     std::getline(file, line);
 
     // Determine delimiter
-    const char delimiter = detail::getDelimiter(line);
+    if (delimiter == '\0')
+    {
+        delimiter = detail::getDelimiter(line);
+    }
 
     // Get header
     header.clear();
@@ -347,7 +354,7 @@ std::vector<FilteredTuple<ColumnTs...>> toVectors(CharT&& filename, std::vector<
         header.push_back(label);
     }
 
-    return toVectors<ColumnTs...>(std::move(file), false); // don't skip first line (header) as we already extracted it
+    return toVectors<ColumnTs...>(std::move(file), delimiter);
 }
 
 } // namespace csv
