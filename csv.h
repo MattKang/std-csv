@@ -97,7 +97,7 @@ auto getTupleBySequence(const std::tuple<Ts...>& tup, std::index_sequence<Indice
 template<typename UnwantedT = IGNORE, typename... Ts>
 auto filterTuple(const std::tuple<Ts...>& tup)
 {
-    return getTupleBySequence(tup, getFilteredSequence<UnwantedT>(tup, std::make_index_sequence<sizeof...(Ts)>{}));
+    return getTupleBySequence(tup, getFilteredSequence<UnwantedT>(tup, std::index_sequence_for<Ts...>{}));
 }
 
 template<typename VectorT, size_t... Indices>
