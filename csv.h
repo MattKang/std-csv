@@ -18,7 +18,7 @@ namespace csv
 using IGNORE = std::tuple<>;
 
 // defines std::tuple<FilteredTs...>
-template<typename... Ts>
+template<typename ...Ts>
 using FilteredTuple = decltype(std::tuple_cat(
         std::declval<std::conditional_t<std::is_same<IGNORE, Ts>::value, std::tuple<>, std::tuple<Ts>>>()...));
 
@@ -68,25 +68,31 @@ T parseStream(std::istringstream& stream, char delimiter)
 }
 
 template<typename>
-struct IntegralConstantTupleToSequence;
+struct IndexSequence;
 
-template<typename... Ts>
-struct IntegralConstantTupleToSequence<std::tuple<Ts...>>
+template<typename ...IntegralConstants>
+struct IndexSequence<std::tuple<IntegralConstants...>>
 {
-    using type = std::index_sequence<Ts::value...>;
+    using type = std::index_sequence<IntegralConstants::value...>;
 };
 
-template<typename UnwantedT = IGNORE, typename... Ts, size_t... Indices>
-auto getFilteredSequence(const std::tuple<Ts...>&, std::index_sequence<Indices...>)
+template<typename UnwantedT, typename Sequence, typename ...Ts>
+struct FilteredIndexSequenceImpl;
+
+template<typename UnwantedT, size_t... Indices, typename... Ts>
+struct FilteredIndexSequenceImpl<UnwantedT, std::index_sequence<Indices...>, Ts...>
 {
-    using FilteredIntegralConstantTupleT = decltype(std::tuple_cat(
+    using FilteredIntegralConstantTuple = decltype(std::tuple_cat(
             std::declval<std::conditional_t<std::is_same<UnwantedT, Ts>::value,
                                             std::tuple<>,
                                             std::tuple<std::integral_constant<size_t, Indices>>
                                            >
                         >()...));
-    return typename IntegralConstantTupleToSequence<FilteredIntegralConstantTupleT>::type{};
-}
+    using type = typename IndexSequence<FilteredIntegralConstantTuple>::type;
+};
+
+template<typename UnwantedT, typename ...Ts>
+using FilteredIndexSequence = typename FilteredIndexSequenceImpl<UnwantedT, std::index_sequence_for<Ts...>, Ts...>::type;
 
 template<typename... Ts, size_t... Indices>
 auto getTupleBySequence(const std::tuple<Ts...>& tup, std::index_sequence<Indices...>)
@@ -95,9 +101,9 @@ auto getTupleBySequence(const std::tuple<Ts...>& tup, std::index_sequence<Indice
 }
 
 template<typename UnwantedT = IGNORE, typename... Ts>
-auto filterTuple(const std::tuple<Ts...>& tup)
+auto filterTupleByType(const std::tuple<Ts...>& tup)
 {
-    return getTupleBySequence(tup, getFilteredSequence<UnwantedT>(tup, std::index_sequence_for<Ts...>{}));
+    return getTupleBySequence(tup, FilteredIndexSequence<UnwantedT, Ts...>{});
 }
 
 template<typename VectorT, size_t... Indices>
@@ -241,7 +247,7 @@ std::vector<FilteredTuple<ColumnTs...>> toTuples(CharT&& filename, char delimite
     {
         std::istringstream stream(line);
         std::tuple<ColumnTs...> unfilteredTuple(detail::parseStream<ColumnTs>(stream, delimiter)...);
-        data.emplace_back(detail::filterTuple(unfilteredTuple));
+        data.emplace_back(detail::filterTupleByType(unfilteredTuple));
     }
     while (std::getline(file, line));
 
@@ -281,8 +287,8 @@ std::vector<FilteredTuple<ColumnTs...>> toTuples(const std::string_view& filenam
 
     // Remove ignored columns
     header = detail::getVectorBySequence(std::move(header),
-                                         detail::getFilteredSequence(std::tuple<ColumnTs...>{},
-                                                                     std::make_index_sequence<sizeof...(ColumnTs)>{}));
+                                         detail::FilteredIndexSequence(std::tuple<ColumnTs...>{},
+                                                                       std::make_index_sequence<sizeof...(ColumnTs)>{}));
 
     return toTuples<ColumnTs...>(std::move(file), delimiter);
 }
