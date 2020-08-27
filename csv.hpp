@@ -2,8 +2,8 @@
 // Created by Matthew Kang on 2019-04-25.
 //
 
-#ifndef CSV_H
-#define CSV_H
+#ifndef CSV_HPP
+#define CSV_HPP
 
 #include <array>
 #include <fstream>
@@ -365,4 +365,4 @@ std::vector<FilteredTuple<ColumnTs...>> toVectors(const std::string_view& filena
 
 } // namespace csv
 
-#endif //CSV_H
+#endif //CSV_HPP
