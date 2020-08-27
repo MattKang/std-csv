@@ -286,9 +286,7 @@ std::vector<FilteredTuple<ColumnTs...>> toTuples(const std::string_view& filenam
     }
 
     // Remove ignored columns
-    header = detail::getVectorBySequence(std::move(header),
-                                         detail::FilteredIndexSequence(std::tuple<ColumnTs...>{},
-                                                                       std::make_index_sequence<sizeof...(ColumnTs)>{}));
+    header = detail::getVectorBySequence(std::move(header), detail::FilteredIndexSequence<IGNORE, ColumnTs...>{});
 
     return toTuples<ColumnTs...>(std::move(file), delimiter);
 }
