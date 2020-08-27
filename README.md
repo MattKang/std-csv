@@ -1,5 +1,5 @@
 # std-csv
-You don't have time to read a description. You want your CSV now. C++14. Header-only. Read to arrays, tuples, vectors. Delimiter deduction (commas, spaces, tabs).
+You don't have time to read a description. You want your CSV now. C++17. Header-only. Read to arrays, tuples, vectors. Delimiter deduction (commas, spaces, tabs).
 
 ```cpp
 #include "csv.h"
