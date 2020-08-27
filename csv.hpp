@@ -57,6 +57,18 @@ T parseStream(std::istringstream& stream, char delimiter)
         std::getline(stream, value, delimiter);
         return value;
     }
+    else if constexpr (std::is_same_v<T, bool>)
+    {
+        std::string valueAsString;
+        std::getline(stream, valueAsString, delimiter);
+        const auto first = valueAsString[valueAsString.find_first_of("tTfF01")];
+        if (!valueAsString.empty()
+            && (first == 't' || first == 'T'|| first == '1'))
+        {
+            return true;
+        }
+        return false;
+    }
     else
     {
         T value = std::numeric_limits<T>::quiet_NaN();
