@@ -246,7 +246,7 @@ std::vector<FilteredTuple<ColumnTs...>> toTuples(CharT&& filename, char delimite
     do
     {
         std::istringstream stream(line);
-        std::tuple<ColumnTs...> unfilteredTuple(detail::parseStream<ColumnTs>(stream, delimiter)...);
+        std::tuple<ColumnTs...> unfilteredTuple = {detail::parseStream<ColumnTs>(stream, delimiter)...};
         data.emplace_back(detail::filterTupleByType(unfilteredTuple));
     }
     while (std::getline(file, line));
