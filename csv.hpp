@@ -91,13 +91,13 @@ struct IndexSequence<std::tuple<IntegralConstants...>>
 template<typename UnwantedT, typename Sequence, typename ...Ts>
 struct FilteredIndexSequenceImpl;
 
-template<typename UnwantedT, size_t... Indices, typename... Ts>
-struct FilteredIndexSequenceImpl<UnwantedT, std::index_sequence<Indices...>, Ts...>
+template<typename UnwantedT, size_t... indices, typename... Ts>
+struct FilteredIndexSequenceImpl<UnwantedT, std::index_sequence<indices...>, Ts...>
 {
     using FilteredIntegralConstantTuple = decltype(std::tuple_cat(
             std::declval<std::conditional_t<std::is_same<UnwantedT, Ts>::value,
                                             std::tuple<>,
-                                            std::tuple<std::integral_constant<size_t, Indices>>
+                                            std::tuple<std::integral_constant<size_t, indices>>
                                            >
                         >()...));
     using type = typename IndexSequence<FilteredIntegralConstantTuple>::type;
@@ -106,10 +106,10 @@ struct FilteredIndexSequenceImpl<UnwantedT, std::index_sequence<Indices...>, Ts.
 template<typename UnwantedT, typename ...Ts>
 using FilteredIndexSequence = typename FilteredIndexSequenceImpl<UnwantedT, std::index_sequence_for<Ts...>, Ts...>::type;
 
-template<typename... Ts, size_t... Indices>
-auto getTupleBySequence(const std::tuple<Ts...>& tup, std::index_sequence<Indices...>)
+template<typename... Ts, size_t... indices>
+auto getTupleBySequence(const std::tuple<Ts...>& tup, std::index_sequence<indices...>)
 {
-    return std::make_tuple(std::get<Indices>(tup)...);
+    return std::make_tuple(std::get<indices>(tup)...);
 }
 
 template<typename UnwantedT = IGNORE, typename... Ts>
@@ -118,10 +118,10 @@ auto filterTupleByType(const std::tuple<Ts...>& tup)
     return getTupleBySequence(tup, FilteredIndexSequence<UnwantedT, Ts...>{});
 }
 
-template<typename VectorT, size_t... Indices>
-std::decay_t<VectorT> getVectorBySequence(VectorT&& vec, std::index_sequence<Indices...>)
+template<typename VectorT, size_t... indices>
+std::decay_t<VectorT> getVectorBySequence(VectorT&& vec, std::index_sequence<indices...>)
 {
-    return {vec.at(Indices)...};
+    return {vec.at(indices)...};
 }
 
 } // namespace detail
