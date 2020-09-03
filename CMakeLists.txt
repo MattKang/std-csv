@@ -3,4 +3,7 @@ project(std-csv)
 
 set(CMAKE_CXX_STANDARD 17)
 
-add_executable(std-csv main.cpp csv.hpp)
+find_package(Catch2)
+
+add_subdirectory(src)
+add_subdirectory(tests)
