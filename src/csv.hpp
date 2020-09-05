@@ -100,12 +100,6 @@ auto filterTupleByType(const std::tuple<Ts...>& tup)
     return getTupleBySequence(tup, FilteredIndexSequence<UnwantedT, Ts...>{});
 }
 
-template<typename VectorT, size_t... indices>
-std::decay_t<VectorT> getVectorBySequence(VectorT&& vec, std::index_sequence<indices...>)
-{
-    return {vec.at(indices)...};
-}
-
 template<typename T>
 T parseStream(std::istringstream& stream, char delimiter)
 {
@@ -292,6 +286,12 @@ std::vector<std::vector<DataT>> toVectors(const std::string_view& path, char del
 {
     if (auto file = std::ifstream(path.data()))
     {
+        // Check delimiter
+        if (delimiter == '\0')
+        {
+            delimiter = detail::getDelimiter(file);
+        }
+        // Read CSV
         return detail::parseCsv<std::vector<DataT>>(file, delimiter);
     }
     return {};
