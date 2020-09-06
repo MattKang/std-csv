@@ -23,14 +23,25 @@ TEST_CASE("Read tuples with ignored columns")
 
 TEST_CASE("Read header")
 {
-    const auto dataPath = projectRoot + "/data/test_ints_with_header.csv";
+    const auto dataPath = projectRoot + "/data/test_int_with_header.csv";
     auto header = csv::getHeader(dataPath);
     CHECK(header == std::vector<std::string>{"Index", "Age", "Score"});
 }
 
 TEST_CASE("Read arrays")
 {
-    const auto dataPath = projectRoot + "/data/test_ints_with_header.csv";
+    const auto dataPath = projectRoot + "/data/test_float.csv";
+    auto arr = csv::toArrays<double, 4>(dataPath);
+    CHECK(arr == std::vector<std::array<double, 4>>{
+            {3.3l, 25.0, 1.4738, 4789.1},
+            {4.18374, 0.48734, 47839247.471890234, 0},
+            {9.324123, 3.14159, 6.677, 1234.567890}
+    });
+}
+
+TEST_CASE("Read arrays with header")
+{
+    const auto dataPath = projectRoot + "/data/test_int_with_header.csv";
     using Header = std::array<std::string, 3>;
     Header header;
     auto arr = csv::toArrays<int, 3>(dataPath, header);
@@ -39,11 +50,12 @@ TEST_CASE("Read arrays")
 
 TEST_CASE("Read vectors")
 {
-    const auto dataPath = projectRoot + "/data/test_ints_with_header.csv";
+    const auto dataPath = projectRoot + "/data/test_int_with_header.csv";
     using Header = std::vector<std::string>;
     Header header;
     auto arr = csv::toVectors<int>(dataPath, header);
     CHECK(header == Header{"Index", "Age", "Score"});
+    CHECK(arr == std::vector<std::vector<int>>{{1, 25, 100}, {2, 38, 87}, {3, 19, 55}});
 }
 
 TEST_CASE("Array check")

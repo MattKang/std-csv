@@ -136,27 +136,27 @@ T parseStream(std::istringstream& stream, char delimiter)
     }
 }
 
-template<typename T, typename CharT>
-std::vector<T> parseCsv(std::basic_istream<CharT>& file, char delimiter)
+template<typename RowT, typename CharT>
+std::vector<RowT> parseCsv(std::basic_istream<CharT>& file, char delimiter)
 {
-    std::vector<T> data;
+    std::vector<RowT> data;
     std::string line;
     while (std::getline(file, line))
     {
         std::istringstream stream(line);
-        T values;
-        if constexpr (is_array<T>::value)
+        RowT values;
+        if constexpr (is_array<RowT>::value)
         {
             for (auto& v : values)
             {
-                v = detail::parseStream<typename T::value_type>(stream, delimiter);
+                v = detail::parseStream<typename RowT::value_type>(stream, delimiter);
             }
         }
         else
         {
             while (!stream.eof())
             {
-                values.push_back(detail::parseStream<typename T::value_type>(stream, delimiter));
+                values.push_back(detail::parseStream<typename RowT::value_type>(stream, delimiter));
             }
         }
         data.push_back(std::move(values));
@@ -178,13 +178,49 @@ std::vector<FilteredTuple<Ts...>> parseCsvToTuples(std::basic_istream<CharT>& fi
     return data;
 }
 
-template<typename ArrayT>
-ArrayT getHeader(std::ifstream& file, char delimiter)
+template<typename ContainerT>
+ContainerT getHeader(std::ifstream& file, char delimiter)
 {
     std::string line;
     std::getline(file, line);
     std::istringstream stream(line);
-    return detail::parseCsv<ArrayT>(stream, delimiter).front();
+    return detail::parseCsv<ContainerT>(stream, delimiter).front();
+}
+
+template<typename ContainerT>
+std::vector<ContainerT> toContainers(const std::string_view& path, char delimiter)
+{
+    // Open file
+    if (auto file = std::ifstream(path.data()))
+    {
+        // Check delimiter
+        if (delimiter == '\0')
+        {
+            delimiter = detail::getDelimiter(file);
+        }
+        // Read CSV
+        return detail::parseCsv<ContainerT>(file, delimiter);
+    }
+    return {};
+}
+
+template<typename ContainerT, typename HeaderT>
+std::vector<ContainerT> toContainers(const std::string_view& path, char delimiter, HeaderT&& header)
+{
+    // Open file
+    if (auto file = std::ifstream(path.data()))
+    {
+        // Check delimiter
+        if (delimiter == '\0')
+        {
+            delimiter = detail::getDelimiter(file);
+        }
+        // Read header
+        header = detail::getHeader<std::decay_t<HeaderT>>(file, delimiter);
+        // Read CSV
+        return detail::parseCsv<ContainerT>(file, delimiter);
+    }
+    return {};
 }
 } // namespace detail
 
@@ -204,42 +240,18 @@ std::vector<std::string> getHeader(const std::string_view& path, char delimiter 
     return {};
 }
 
-template<typename DataT, size_t nColumns>
-std::vector<std::array<DataT, nColumns>> toArrays(const std::string_view& path, char delimiter = '\0')
+template<typename ValueT, size_t nColumns>
+std::vector<std::array<ValueT, nColumns>> toArrays(const std::string_view& path, char delimiter = '\0')
 {
-    // Open file
-    if (auto file = std::ifstream(path.data()))
-    {
-        // Check delimiter
-        if (delimiter == '\0')
-        {
-            delimiter = detail::getDelimiter(file);
-        }
-        // Read CSV
-        return detail::parseCsv<std::array<DataT, nColumns>>(file, delimiter);
-    }
-    return {};
+    return detail::toContainers<std::array<ValueT, nColumns>>(path, delimiter);
 }
 
-template<typename DataT, size_t nColumns>
-std::vector<std::array<DataT, nColumns>> toArrays(const std::string_view& path,
-                                                  std::array<std::string, nColumns>& header,
-                                                  char delimiter = '\0')
+template<typename ValueT, size_t nColumns>
+std::vector<std::array<ValueT, nColumns>> toArrays(const std::string_view& path,
+                                                   std::array<std::string, nColumns>& header,
+                                                   char delimiter = '\0')
 {
-    // Open file
-    if (auto file = std::ifstream(path.data()))
-    {
-        // Check delimiter
-        if (delimiter == '\0')
-        {
-            delimiter = detail::getDelimiter(file);
-        }
-        // Read header
-        header = detail::getHeader<std::array<std::string, nColumns>>(file, delimiter);
-        // Read CSV
-        return detail::parseCsv<std::array<DataT, nColumns>>(file, delimiter);
-    }
-    return {};
+    return detail::toContainers<std::array<ValueT, nColumns>>(path, delimiter, header);
 }
 
 template<typename... ColumnTs>
@@ -281,41 +293,18 @@ std::vector<FilteredTuple<ColumnTs...>> toTuples(const std::string_view& path,
     return {};
 }
 
-template<typename DataT>
-std::vector<std::vector<DataT>> toVectors(const std::string_view& path, char delimiter = '\0')
+template<typename ValueT>
+std::vector<std::vector<ValueT>> toVectors(const std::string_view& path, char delimiter = '\0')
 {
-    if (auto file = std::ifstream(path.data()))
-    {
-        // Check delimiter
-        if (delimiter == '\0')
-        {
-            delimiter = detail::getDelimiter(file);
-        }
-        // Read CSV
-        return detail::parseCsv<std::vector<DataT>>(file, delimiter);
-    }
-    return {};
+    return detail::toContainers<std::vector<ValueT>>(path, delimiter);
 }
 
-template<typename DataT, typename... ColumnTs>
-std::vector<std::vector<DataT>> toVectors(const std::string_view& path,
-                                          std::vector<std::string>& header,
-                                          char delimiter = '\0')
+template<typename ValueT>
+std::vector<std::vector<ValueT>> toVectors(const std::string_view& path,
+                                           std::vector<std::string>& header,
+                                           char delimiter = '\0')
 {
-    // Open file
-    if (auto file = std::ifstream(path.data()))
-    {
-        // Check delimiter
-        if (delimiter == '\0')
-        {
-            delimiter = detail::getDelimiter(file);
-        }
-        // Read header
-        header = detail::getHeader<std::vector<std::string>>(file, delimiter);
-        // Read CSV
-        return detail::parseCsv<std::vector<DataT>>(file, delimiter);
-    }
-    return {};
+    return detail::toContainers<std::vector<ValueT>>(path, delimiter, header);
 }
 
 } // namespace csv
