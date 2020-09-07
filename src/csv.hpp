@@ -18,7 +18,7 @@ namespace csv
 using IGNORE = std::tuple<>;
 
 /// @brief Defines std::tuple<FilteredTs...>
-template<typename ...Ts>
+template<typename... Ts>
 using FilteredTuple = decltype(std::tuple_cat(
         std::declval<std::conditional_t<std::is_same<IGNORE, Ts>::value, std::tuple<>, std::tuple<Ts>>>()...));
 
@@ -57,10 +57,22 @@ using FilteredIndexSequence = typename FilteredIndexSequenceImpl<UnwantedT,
                                                                  Ts...>::type;
 
 template<typename T>
-struct is_array : std::false_type { };
+struct IsArray : std::false_type { };
 
 template<typename T, size_t N>
-struct is_array<std::array<T, N>> : std::true_type { };
+struct IsArray<std::array<T, N>> : std::true_type { };
+
+template<typename T>
+struct IsTuple : std::false_type { };
+
+template<typename... Ts>
+struct IsTuple<std::tuple<Ts...>> : std::true_type { };
+
+template<typename T>
+struct FilteredTypes { using type = T; };
+
+template<typename... Ts>
+struct FilteredTypes<std::tuple<Ts...>> { using type = FilteredTuple<Ts...>; };
 /// @}
 
 template<typename CharT>
@@ -100,19 +112,19 @@ auto filterTupleByType(const std::tuple<Ts...>& tup)
     return getTupleBySequence(tup, FilteredIndexSequence<UnwantedT, Ts...>{});
 }
 
-template<typename T>
-T parseRow(std::istringstream& stream, char delimiter)
+template<typename T, typename CharT>
+T parseRow(std::basic_istream<CharT>& row, char delimiter)
 {
     if constexpr (std::is_same_v<T, IGNORE>)
     {
-        stream.ignore(std::numeric_limits<std::streamsize>::max(), delimiter);
+        row.ignore(std::numeric_limits<std::streamsize>::max(), delimiter);
         return {};
     }
     else if constexpr (std::is_same_v<T, std::string>)
     {
         std::string value;
-        std::getline(stream, value, delimiter);
-        if (stream.eof() && value.back() == '\r')
+        std::getline(row, value, delimiter);
+        if (row.eof() && value.back() == '\r')
         {
             value.pop_back();
         }
@@ -121,63 +133,58 @@ T parseRow(std::istringstream& stream, char delimiter)
     else if constexpr (std::is_same_v<T, bool>)
     {
         std::string valueAsString;
-        std::getline(stream, valueAsString, delimiter);
+        std::getline(row, valueAsString, delimiter);
         const auto first = valueAsString[valueAsString.find_first_of("tTfF01")];
-        if (!valueAsString.empty()
-            && (first == 't' || first == 'T' || first == '1'))
-        {
-            return true;
-        }
-        return false;
+        return (!valueAsString.empty()
+                && (first == 't' || first == 'T' || first == '1'));
     }
     else
     {
         T value = std::numeric_limits<T>::quiet_NaN();
         std::string valueAsString;
-        std::getline(stream, valueAsString, delimiter);
+        std::getline(row, valueAsString, delimiter);
         std::istringstream(valueAsString) >> value;
         return value;
     }
 }
 
-template<typename RowT, typename CharT>
-std::vector<RowT> parseCsv(std::basic_istream<CharT>& file, char delimiter)
+template<typename ...Ts, typename CharT>
+FilteredTuple<Ts...> parseRowToTuples(std::basic_istream<CharT>& row, char delimiter, std::tuple<Ts...>)
 {
-    std::vector<RowT> data;
+    std::string value;
+    auto unfilteredTuple = std::tuple<Ts...>{detail::parseRow<Ts>(row, delimiter)...};
+    return filterTupleByType(unfilteredTuple);
+}
+
+template<typename RowT, typename CharT>
+auto parseCsv(std::basic_istream<CharT>& file, char delimiter)
+{
+    using RowOutT = std::conditional_t<IsTuple<RowT>::value, typename FilteredTypes<RowT>::type, RowT>;
+    std::vector<RowOutT> data;
     std::string line;
     while (std::getline(file, line))
     {
         std::istringstream stream(line);
-        RowT values;
-        if constexpr (is_array<RowT>::value)
+        RowOutT values;
+        if constexpr (IsArray<RowOutT>::value)
         {
             for (auto& v : values)
             {
-                v = detail::parseRow<typename RowT::value_type>(stream, delimiter);
+                v = detail::parseRow<typename RowOutT::value_type>(stream, delimiter);
             }
+        }
+        else if constexpr (IsTuple<RowOutT>::value)
+        {
+            values = detail::parseRowToTuples(stream, delimiter, RowT{});
         }
         else
         {
             while (!stream.eof())
             {
-                values.push_back(detail::parseRow<typename RowT::value_type>(stream, delimiter));
+                values.push_back(detail::parseRow<typename RowOutT::value_type>(stream, delimiter));
             }
         }
         data.push_back(std::move(values));
-    }
-    return data;
-}
-
-template<typename ...Ts, typename CharT>
-std::vector<FilteredTuple<Ts...>> parseCsvToTuples(std::basic_istream<CharT>& file, char delimiter)
-{
-    std::vector<FilteredTuple<Ts...>> data;
-    std::string line;
-    while (std::getline(file, line))
-    {
-        std::istringstream stream(line);
-        auto unfilteredTuple = std::tuple<Ts...>{detail::parseRow<Ts>(stream, delimiter)...};
-        data.push_back(filterTupleByType(unfilteredTuple));
     }
     return data;
 }
@@ -191,28 +198,12 @@ ContainerT getHeader(std::ifstream& file, char delimiter)
     return detail::parseCsv<ContainerT>(stream, delimiter).front();
 }
 
-template<typename ContainerT>
-std::vector<ContainerT> toContainers(const std::string_view& path, char delimiter)
+template<typename ContainerT, typename HeaderT = IGNORE>
+auto toContainers(const std::string_view& path, char delimiter, HeaderT&& header = {})
 {
     // Open file
-    if (auto file = std::ifstream(path.data()))
-    {
-        // Check delimiter
-        if (delimiter == '\0')
-        {
-            delimiter = detail::getDelimiter(file);
-        }
-        // Read CSV
-        return detail::parseCsv<ContainerT>(file, delimiter);
-    }
-    return {};
-}
-
-template<typename ContainerT, typename HeaderT>
-std::vector<ContainerT> toContainers(const std::string_view& path, char delimiter, HeaderT&& header)
-{
-    // Open file
-    if (auto file = std::ifstream(path.data()))
+    auto file = std::ifstream(path.data());
+    if (file)
     {
         // Check delimiter
         if (delimiter == '\0')
@@ -220,11 +211,14 @@ std::vector<ContainerT> toContainers(const std::string_view& path, char delimite
             delimiter = detail::getDelimiter(file);
         }
         // Read header
-        header = detail::getHeader<std::decay_t<HeaderT>>(file, delimiter);
+        if constexpr (!std::is_same_v<HeaderT, IGNORE>)
+        {
+            header = detail::getHeader<std::decay_t<HeaderT>>(file, delimiter);
+        }
         // Read CSV
         return detail::parseCsv<ContainerT>(file, delimiter);
     }
-    return {};
+    return decltype(detail::parseCsv<ContainerT>(file, delimiter)){};
 }
 } // namespace detail
 
@@ -261,18 +255,7 @@ std::vector<std::array<ValueT, nColumns>> toArrays(const std::string_view& path,
 template<typename... ColumnTs>
 std::vector<FilteredTuple<ColumnTs...>> toTuples(const std::string_view& path, char delimiter = '\0')
 {
-    // Open file
-    if (auto file = std::ifstream(path.data()))
-    {
-        // Check delimiter
-        if (delimiter == '\0')
-        {
-            delimiter = detail::getDelimiter(file);
-        }
-        // Read CSV
-        return detail::parseCsvToTuples<ColumnTs...>(file, delimiter);
-    }
-    return {};
+    return detail::toContainers<std::tuple<ColumnTs...>>(path, delimiter);
 }
 
 template<typename... ColumnTs, size_t nColumns = std::tuple_size_v<FilteredTuple<ColumnTs...>>>
@@ -280,21 +263,7 @@ std::vector<FilteredTuple<ColumnTs...>> toTuples(const std::string_view& path,
                                                  std::array<std::string, nColumns>& header,
                                                  char delimiter = '\0')
 {
-    // Open file
-    if (auto file = std::ifstream(path.data()))
-    {
-        // Check delimiter
-        if (delimiter == '\0')
-        {
-            delimiter = detail::getDelimiter(file);
-        }
-        // Read header
-        header = detail::getTupleBySequence(detail::getHeader<std::array<std::string, nColumns>>(file, delimiter),
-                                            detail::FilteredIndexSequence<IGNORE, ColumnTs...>{});
-        // Read CSV
-        return detail::parseCsvToTuples<ColumnTs...>(file, delimiter);
-    }
-    return {};
+    return detail::toContainers<std::tuple<ColumnTs...>>(path, delimiter, header);
 }
 
 template<typename ValueT>

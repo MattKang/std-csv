@@ -60,6 +60,6 @@ TEST_CASE("Read vectors")
 
 TEST_CASE("Array check")
 {
-    CHECK(csv::detail::is_array<std::array<int, 4>>::value == true);
-    CHECK(csv::detail::is_array<std::vector<int>>::value == false);
+    CHECK(csv::detail::IsArray<std::array<int, 4>>::value == true);
+    CHECK(csv::detail::IsArray<std::vector<int>>::value == false);
 }
