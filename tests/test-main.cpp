@@ -6,7 +6,7 @@
 
 #include "csv.hpp"
 
-#include <catch2/catch.hpp>
+#include "catch.hpp"
 #include <filesystem>
 
 const auto projectRoot = std::filesystem::current_path().parent_path().parent_path().string();

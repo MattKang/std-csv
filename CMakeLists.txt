@@ -3,7 +3,5 @@ project(std-csv)
 
 set(CMAKE_CXX_STANDARD 17)
 
-find_package(Catch2)
-
 add_subdirectory(src)
 add_subdirectory(tests)
