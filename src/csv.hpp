@@ -101,7 +101,7 @@ auto filterTupleByType(const std::tuple<Ts...>& tup)
 }
 
 template<typename T>
-T parseStream(std::istringstream& stream, char delimiter)
+T parseRow(std::istringstream& stream, char delimiter)
 {
     if constexpr (std::is_same_v<T, IGNORE>)
     {
@@ -112,6 +112,10 @@ T parseStream(std::istringstream& stream, char delimiter)
     {
         std::string value;
         std::getline(stream, value, delimiter);
+        if (stream.eof() && value.back() == '\r')
+        {
+            value.pop_back();
+        }
         return value;
     }
     else if constexpr (std::is_same_v<T, bool>)
@@ -149,14 +153,14 @@ std::vector<RowT> parseCsv(std::basic_istream<CharT>& file, char delimiter)
         {
             for (auto& v : values)
             {
-                v = detail::parseStream<typename RowT::value_type>(stream, delimiter);
+                v = detail::parseRow<typename RowT::value_type>(stream, delimiter);
             }
         }
         else
         {
             while (!stream.eof())
             {
-                values.push_back(detail::parseStream<typename RowT::value_type>(stream, delimiter));
+                values.push_back(detail::parseRow<typename RowT::value_type>(stream, delimiter));
             }
         }
         data.push_back(std::move(values));
@@ -172,7 +176,7 @@ std::vector<FilteredTuple<Ts...>> parseCsvToTuples(std::basic_istream<CharT>& fi
     while (std::getline(file, line))
     {
         std::istringstream stream(line);
-        auto unfilteredTuple = std::tuple<Ts...>{detail::parseStream<Ts>(stream, delimiter)...};
+        auto unfilteredTuple = std::tuple<Ts...>{detail::parseRow<Ts>(stream, delimiter)...};
         data.push_back(filterTupleByType(unfilteredTuple));
     }
     return data;
