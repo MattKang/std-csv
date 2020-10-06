@@ -9,35 +9,36 @@ auto data = csv::toVectors<float>(filename);
 ```
 You're done.
 
+Read to a vector of vectors:
+```cpp
+auto data = csv::toVectors<float>(filename); // std::vector<std::vector<float>>
+```
+
 Read to a vector of arrays:
 ```cpp
-std::vector<std::array<float, 3>> data;
-data = csv::toArrays<float, 3>(filename);
+auto data = csv::toArrays<float, 3>(filename); // std::vector<std::array<float, 3>>
 ```
 
 Read to a vector of tuples:
 ```cpp
-std::vector<std::tuple<int, double, std::string>> data;
-data = csv::toTuples<int, double, std::string>(filename);
+auto data = csv::toTuples<int, double, std::string>(filename); // std::vector<std::tuple<int, double, std::string>>
 ```
 
 Skip columns:
 ```cpp
-std::vector<std::tuple<int, std::string>> data;
-data = csv::toTuples<int, csv::IGNORE, std::string>(filename);
+auto data = csv::toTuples<int, csv::IGNORE, std::string>(filename); // std::vector<std::tuple<int, std::string>>
 ```
 
-Get header:
+Read the header:
 ```cpp
-// full header
-std::vector<std::string> fullHeader = csv::getHeader(filename);
-// just the columns you want
 std::vector<std::string> header;
-csv::toTuples<int, csv::IGNORE, std::string>(filename, header);
-```
 
-Skip header:
-```cpp
-bool skipHeader = true;
-auto data = csv::toVectors<unsigned long>(filename, skipHeader);
+// read on its own
+header = csv::getHeader(filename);
+
+// read with the CSV
+auto data = csv::toVectors<float>(filename, header);
+
+// read just the columns you want
+auto data = csv::toTuples<int, csv::IGNORE, std::string>(filename, header);
 ```
