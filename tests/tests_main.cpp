@@ -63,3 +63,29 @@ TEST_CASE("Array check")
     CHECK(csv::detail::IsArray<std::array<int, 4>>::value == true);
     CHECK(csv::detail::IsArray<std::vector<int>>::value == false);
 }
+
+TEST_CASE("Tab delimiters")
+{
+    const auto dataPath = projectRoot + "/data/test.tsv";
+    auto tups = csv::toTuples<int, float, bool, int, int, int>(dataPath, '\t');
+    const auto& t = tups.back();
+    CHECK(std::get<0>(t) == 2);
+    CHECK(std::get<1>(t) == 5.04f);
+    CHECK(std::get<2>(t) == false);
+    CHECK(std::get<3>(t) == 4);
+    CHECK(std::get<4>(t) == 5);
+    CHECK(std::get<5>(t) == -6);
+}
+
+TEST_CASE("Tab delimiter deduction")
+{
+    const auto dataPath = projectRoot + "/data/test.tsv";
+    auto tups = csv::toTuples<int, float, bool, int, int, int>(dataPath);
+    const auto& t = tups.at(1);
+    CHECK(std::get<0>(t) == 3);
+    CHECK(std::get<1>(t) == 1.14f);
+    CHECK(std::get<2>(t) == false);
+    CHECK(std::get<3>(t) == 5);
+    CHECK(std::get<4>(t) == 9);
+    CHECK(std::get<5>(t) == -9999);
+}
