@@ -101,15 +101,15 @@ char getDelimiter(std::basic_istream<CharT>& file)
 }
 
 template<typename... Ts, size_t... indices>
-auto getTupleBySequence(const std::tuple<Ts...>& tup, std::index_sequence<indices...>)
+auto getTupleBySequence(std::tuple<Ts...> tup, std::index_sequence<indices...>)
 {
-    return std::make_tuple(std::get<indices>(tup)...);
+    return std::make_tuple(std::move(std::get<indices>(tup))...);
 }
 
 template<typename UnwantedT = ignore, typename... Ts>
 auto filterTupleByType(std::tuple<Ts...> tup)
 {
-    return getTupleBySequence(tup, FilteredIndexSequence<UnwantedT, Ts...>{});
+    return getTupleBySequence(std::move(tup), FilteredIndexSequence<UnwantedT, Ts...>{});
 }
 
 template<typename T, typename CharT>
@@ -149,11 +149,10 @@ T parseRow(std::basic_istream<CharT>& row, char delimiter)
 }
 
 template<typename ...Ts, typename CharT>
-FilteredTuple<Ts...> parseRowToTuples(std::basic_istream<CharT>& row, char delimiter, std::tuple<Ts...>)
+FilteredTuple<Ts...> parseRow(std::basic_istream<CharT>& row, char delimiter, std::tuple<Ts...>)
 {
-    std::string value;
     auto unfilteredTuple = std::tuple<Ts...>{detail::parseRow<Ts>(row, delimiter)...};
-    return filterTupleByType(unfilteredTuple);
+    return filterTupleByType(std::move(unfilteredTuple));
 }
 
 template<typename RowT, typename CharT>
@@ -175,7 +174,7 @@ auto parseCsv(std::basic_istream<CharT>& file, char delimiter)
         }
         else if constexpr (IsTuple<RowOutT>::value)
         {
-            values = detail::parseRowToTuples(stream, delimiter, RowT{});
+            values = detail::parseRow(stream, delimiter, RowT{});
         }
         else
         {
