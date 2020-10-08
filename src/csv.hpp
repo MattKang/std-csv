@@ -15,12 +15,12 @@
 namespace csv
 {
 
-using IGNORE = std::tuple<>;
+using ignore = std::tuple<>;
 
 /// @brief Defines std::tuple<FilteredTs...>
 template<typename... Ts>
 using FilteredTuple = decltype(std::tuple_cat(
-        std::declval<std::conditional_t<std::is_same<IGNORE, Ts>::value, std::tuple<>, std::tuple<Ts>>>()...));
+        std::declval<std::conditional_t<std::is_same<ignore, Ts>::value, std::tuple<>, std::tuple<Ts>>>()...));
 
 namespace detail
 {
@@ -106,8 +106,8 @@ auto getTupleBySequence(const std::tuple<Ts...>& tup, std::index_sequence<indice
     return std::make_tuple(std::get<indices>(tup)...);
 }
 
-template<typename UnwantedT = IGNORE, typename... Ts>
-auto filterTupleByType(const std::tuple<Ts...>& tup)
+template<typename UnwantedT = ignore, typename... Ts>
+auto filterTupleByType(std::tuple<Ts...> tup)
 {
     return getTupleBySequence(tup, FilteredIndexSequence<UnwantedT, Ts...>{});
 }
@@ -115,7 +115,7 @@ auto filterTupleByType(const std::tuple<Ts...>& tup)
 template<typename T, typename CharT>
 T parseRow(std::basic_istream<CharT>& row, char delimiter)
 {
-    if constexpr (std::is_same_v<T, IGNORE>)
+    if constexpr (std::is_same_v<T, ignore>)
     {
         row.ignore(std::numeric_limits<std::streamsize>::max(), delimiter);
         return {};
@@ -198,7 +198,7 @@ ContainerT getHeader(std::ifstream& file, char delimiter)
     return detail::parseCsv<ContainerT>(stream, delimiter).front();
 }
 
-template<typename ContainerT, typename HeaderT = IGNORE>
+template<typename ContainerT, typename HeaderT = ignore>
 auto toContainers(const std::string_view& path, char delimiter, HeaderT&& header = {})
 {
     // Open file
@@ -211,7 +211,7 @@ auto toContainers(const std::string_view& path, char delimiter, HeaderT&& header
             delimiter = detail::getDelimiter(file);
         }
         // Read header
-        if constexpr (!std::is_same_v<HeaderT, IGNORE>)
+        if constexpr (!std::is_same_v<HeaderT, ignore>)
         {
             header = detail::getHeader<std::decay_t<HeaderT>>(file, delimiter);
         }

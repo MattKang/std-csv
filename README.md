@@ -26,7 +26,7 @@ auto data = csv::toTuples<int, double, std::string>(filename); // std::vector<st
 
 Skip columns:
 ```cpp
-auto data = csv::toTuples<int, csv::IGNORE, std::string>(filename); // std::vector<std::tuple<int, std::string>>
+auto data = csv::toTuples<int, csv::ignore, std::string>(filename); // std::vector<std::tuple<int, std::string>>
 ```
 
 Read the header:
@@ -40,5 +40,5 @@ header = csv::getHeader(filename);
 auto data = csv::toVectors<float>(filename, header);
 
 // read just the columns you want
-auto data = csv::toTuples<int, csv::IGNORE, std::string>(filename, header);
+auto data = csv::toTuples<int, csv::ignore, std::string>(filename, header);
 ```

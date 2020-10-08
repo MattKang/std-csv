@@ -14,7 +14,7 @@ const auto projectRoot = std::filesystem::current_path().parent_path().parent_pa
 TEST_CASE("Read tuples with ignored columns")
 {
     const auto dataPath = projectRoot + "/data/test.csv";
-    auto tups = csv::toTuples<int, float, bool, csv::IGNORE, csv::IGNORE, int>(dataPath);
+    auto tups = csv::toTuples<int, float, bool, csv::ignore, csv::ignore, int>(dataPath);
     const auto& t = tups.front();
     CHECK(std::get<0>(t) == 1);
     CHECK(std::get<2>(t) == true);
