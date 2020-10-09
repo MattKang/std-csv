@@ -198,7 +198,7 @@ ContainerT getHeader(std::ifstream& file, char delimiter)
 }
 
 template<typename ContainerT, typename HeaderT = ignore>
-auto toContainers(const std::string_view& path, char delimiter, HeaderT&& header = {})
+auto toContainers(std::string& path, char delimiter, HeaderT&& header = {})
 {
     // Open file
     auto file = std::ifstream(path.data());
@@ -221,7 +221,7 @@ auto toContainers(const std::string_view& path, char delimiter, HeaderT&& header
 }
 } // namespace detail
 
-std::vector<std::string> getHeader(const std::string_view& path, char delimiter = '\0')
+std::vector<std::string> getHeader(std::string path, char delimiter = '\0')
 {
     // Open file
     if (auto file = std::ifstream(path.data()))
@@ -238,13 +238,13 @@ std::vector<std::string> getHeader(const std::string_view& path, char delimiter 
 }
 
 template<typename ValueT, size_t nColumns>
-std::vector<std::array<ValueT, nColumns>> toArrays(const std::string_view& path, char delimiter = '\0')
+std::vector<std::array<ValueT, nColumns>> toArrays(std::string path, char delimiter = '\0')
 {
     return detail::toContainers<std::array<ValueT, nColumns>>(path, delimiter);
 }
 
 template<typename ValueT, size_t nColumns>
-std::vector<std::array<ValueT, nColumns>> toArrays(const std::string_view& path,
+std::vector<std::array<ValueT, nColumns>> toArrays(std::string path,
                                                    std::array<std::string, nColumns>& header,
                                                    char delimiter = '\0')
 {
@@ -252,13 +252,13 @@ std::vector<std::array<ValueT, nColumns>> toArrays(const std::string_view& path,
 }
 
 template<typename... ColumnTs>
-std::vector<FilteredTuple<ColumnTs...>> toTuples(const std::string_view& path, char delimiter = '\0')
+std::vector<FilteredTuple<ColumnTs...>> toTuples(std::string path, char delimiter = '\0')
 {
     return detail::toContainers<std::tuple<ColumnTs...>>(path, delimiter);
 }
 
 template<typename... ColumnTs, size_t nColumns = std::tuple_size_v<FilteredTuple<ColumnTs...>>>
-std::vector<FilteredTuple<ColumnTs...>> toTuples(const std::string_view& path,
+std::vector<FilteredTuple<ColumnTs...>> toTuples(std::string path,
                                                  std::array<std::string, nColumns>& header,
                                                  char delimiter = '\0')
 {
@@ -266,15 +266,13 @@ std::vector<FilteredTuple<ColumnTs...>> toTuples(const std::string_view& path,
 }
 
 template<typename ValueT>
-std::vector<std::vector<ValueT>> toVectors(const std::string_view& path, char delimiter = '\0')
+std::vector<std::vector<ValueT>> toVectors(std::string path, char delimiter = '\0')
 {
     return detail::toContainers<std::vector<ValueT>>(path, delimiter);
 }
 
 template<typename ValueT>
-std::vector<std::vector<ValueT>> toVectors(const std::string_view& path,
-                                           std::vector<std::string>& header,
-                                           char delimiter = '\0')
+std::vector<std::vector<ValueT>> toVectors(std::string path, std::vector<std::string>& header, char delimiter = '\0')
 {
     return detail::toContainers<std::vector<ValueT>>(path, delimiter, header);
 }
