@@ -9,11 +9,13 @@
 #include "catch.hpp"
 #include <filesystem>
 
-const auto projectRoot = std::filesystem::current_path().parent_path().parent_path();
+const auto dataDir = std::filesystem::path(STDCSV_PROJECT_DIR) / "data";
+
 
 TEST_CASE("Read tuples with ignored columns")
 {
-    const auto dataPath = projectRoot / "data/test.csv";
+    const auto dataPath = dataDir / "test.csv";
+    std::cout << "HEY LOOK AT ME: " << dataPath << std::endl;
     assert(std::filesystem::exists(dataPath));
     auto tups = csv::toTuples<int, float, bool, csv::ignore, csv::ignore, int>(dataPath.string());
     REQUIRE(!tups.empty());
@@ -25,7 +27,7 @@ TEST_CASE("Read tuples with ignored columns")
 
 TEST_CASE("Read header")
 {
-    const auto dataPath = projectRoot / "data/test_int_with_header.csv";
+    const auto dataPath = dataDir / "test_int_with_header.csv";
     assert(std::filesystem::exists(dataPath));
 
     auto header = csv::getHeader(dataPath.string());
@@ -34,7 +36,7 @@ TEST_CASE("Read header")
 
 TEST_CASE("Read arrays")
 {
-    const auto dataPath = projectRoot / "data/test_float.csv";
+    const auto dataPath = dataDir / "test_float.csv";
     assert(std::filesystem::exists(dataPath));
 
     auto arr = csv::toArrays<double, 4>(dataPath.string());
@@ -48,7 +50,7 @@ TEST_CASE("Read arrays")
 
 TEST_CASE("Read arrays with header")
 {
-    const auto dataPath = projectRoot / "data/test_int_with_header.csv";
+    const auto dataPath = dataDir / "test_int_with_header.csv";
     assert(std::filesystem::exists(dataPath));
 
     using Header = std::array<std::string, 3>;
@@ -60,7 +62,7 @@ TEST_CASE("Read arrays with header")
 
 TEST_CASE("Read vectors")
 {
-    const auto dataPath = projectRoot / "data/test_int_with_header.csv";
+    const auto dataPath = dataDir / "test_int_with_header.csv";
     assert(std::filesystem::exists(dataPath));
 
     using Header = std::vector<std::string>;
@@ -80,7 +82,7 @@ TEST_CASE("Array check")
 
 TEST_CASE("Tab delimiters")
 {
-    const auto dataPath = projectRoot / "data/test.tsv";
+    const auto dataPath = dataDir / "test.tsv";
     assert(std::filesystem::exists(dataPath));
 
     auto tups = csv::toTuples<int, float, bool, int, int, int>(dataPath.string(), '\t');
@@ -96,7 +98,7 @@ TEST_CASE("Tab delimiters")
 
 TEST_CASE("Tab delimiter deduction")
 {
-    const auto dataPath = projectRoot / "data/test.tsv";
+    const auto dataPath = dataDir / "test.tsv";
     assert(std::filesystem::exists(dataPath));
 
     auto tups = csv::toTuples<int, float, bool, int, int, int>(dataPath.string());
