@@ -201,7 +201,7 @@ template<typename ContainerT, typename HeaderT = ignore>
 auto toContainers(std::string& path, char delimiter, HeaderT&& header = {})
 {
     // Open file
-    auto file = std::ifstream(path.data());
+    auto file = std::ifstream(path);
     if (file)
     {
         // Check delimiter
@@ -224,7 +224,7 @@ auto toContainers(std::string& path, char delimiter, HeaderT&& header = {})
 std::vector<std::string> getHeader(std::string path, char delimiter = '\0')
 {
     // Open file
-    if (auto file = std::ifstream(path.data()))
+    if (auto file = std::ifstream(path))
     {
         // Check delimiter
         if (delimiter == '\0')
