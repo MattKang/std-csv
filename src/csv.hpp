@@ -106,7 +106,7 @@ auto filter_tuple_by_sequence(std::tuple<Ts...> tup, std::index_sequence<indices
     return std::make_tuple(std::move(std::get<indices>(tup))...);
 }
 
-template<typename UnwantedT = ignore, typename... Ts>
+template<typename UnwantedT, typename... Ts>
 auto filter_tuple_by_type(std::tuple<Ts...> tup)
 {
     return filter_tuple_by_sequence(std::move(tup), FilteredIndexSequence<UnwantedT, Ts...>{});
@@ -152,7 +152,7 @@ template<typename ...Ts, typename CharT>
 FilteredTuple<Ts...> parse_row(std::basic_istream<CharT>& row, char delimiter, std::tuple<Ts...>)
 {
     auto unfilteredTuple = std::tuple<Ts...>{detail::parse_row<Ts>(row, delimiter)...};
-    return filter_tuple_by_type(std::move(unfilteredTuple));
+    return filter_tuple_by_type<ignore>(std::move(unfilteredTuple));
 }
 
 template<typename RowT, typename CharT>
