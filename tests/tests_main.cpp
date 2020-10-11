@@ -11,16 +11,16 @@
 
 const auto projectRoot = std::filesystem::current_path().parent_path().parent_path();
 
-//TEST_CASE("Read tuples with ignored columns")
-//{
-//    const auto dataPath = projectRoot / "data/test.csv";
-//    assert(std::filesystem::exists(dataPath));
-//    auto tups = csv::toTuples<int, float, bool, csv::ignore, csv::ignore, int>(dataPath.string());
-//    const auto& t = tups.front();
-//    CHECK(std::get<0>(t) == 1);
-//    CHECK(std::get<2>(t) == true);
-//    CHECK(std::get<3>(t) == -6);
-//}
+TEST_CASE("Read tuples with ignored columns")
+{
+    const auto dataPath = projectRoot / "data/test.csv";
+    assert(std::filesystem::exists(dataPath));
+    auto tups = csv::toTuples<int, float, bool, csv::ignore, csv::ignore, int>(dataPath.string());
+    const auto& t = tups.front();
+    CHECK(std::get<0>(t) == 1);
+    CHECK(std::get<2>(t) == true);
+    CHECK(std::get<3>(t) == -6);
+}
 
 TEST_CASE("Read header")
 {
