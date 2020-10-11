@@ -15,7 +15,6 @@ const auto dataDir = std::filesystem::path(STDCSV_PROJECT_DIR) / "data";
 TEST_CASE("Read tuples with ignored columns")
 {
     const auto dataPath = dataDir / "test.csv";
-    std::cout << "HEY LOOK AT ME: " << dataPath << std::endl;
     assert(std::filesystem::exists(dataPath));
     auto tups = csv::toTuples<int, float, bool, csv::ignore, csv::ignore, int>(dataPath.string());
     REQUIRE(!tups.empty());
